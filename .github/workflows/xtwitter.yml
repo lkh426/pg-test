@@ -1,0 +1,36 @@
+name: Run XTwitter every 6 hours
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  run-xtwitter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install system dependencies (Chrome + drivers)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests selenium undetected-chromedriver
+
+      - name: Run XTwitter
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: |
+          python XTwitter.py --mode selenium
+
+
