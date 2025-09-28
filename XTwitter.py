@@ -95,9 +95,25 @@ def main():
     # 移除飞书相关参数，改为仅使用默认/命令行链接
     args = parser.parse_args()
 
-    #通过远程地址获取链接
-    default_urls = get_xlink_list('http://10.61.171.61/')
-    urls = args.urls if args.urls else default_urls
+    # 通过远程地址获取链接，失败或空则回退到本地文件 X-urls / X-url
+    if args.urls:
+        urls = args.urls
+    else:
+        default_urls: List[str] = []
+        try:
+            default_urls = get_xlink_list('http://10.61.171.61/')
+        except Exception as e:
+            print(f"[warn] 远程获取 X-urls 失败: {e}")
+        if not default_urls:
+            local_files = "X-urls"
+            if os.path.exists(local_files):
+                try:
+                    with open(local_files, "r", encoding="utf-8") as f:
+                        default_urls = [line.strip() for line in f if line.strip()]
+                    print(f"[info] 使用本地 {local_files} 作为 URL 列表（{len(default_urls)} 条）")
+                except Exception as e:
+                    print(f"[warn] 读取本地 {local_files} 失败: {e}")
+        urls = default_urls
 
     def parse_compact_number(text: str) -> int:
         if text is None:
