@@ -141,40 +141,15 @@ def main():
 
     def connect_existing_chrome(debug_addr: str):
         try:
-            ua = (
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            )
-            if UC_AVAILABLE:
-                try:
-                    opts = uc.ChromeOptions()
-                    opts.add_argument("--no-sandbox")
-                    opts.add_argument("--disable-dev-shm-usage")
-                    opts.add_argument("--disable-gpu")
-                    opts.add_argument("--lang=en-US")
-                    opts.add_argument(f"--user-agent={ua}")
-                    opts.add_argument("--window-size=1280,800")
-                    # 在 CI 中即使使用 xvfb，也启用 headless 新模式以稳定渲染
-                    opts.add_argument("--headless=new")
-                    driver = uc.Chrome(options=opts)
-                    print("[Selenium] 使用 undetected-chromedriver 启动 Chrome 实例")
-                    return driver
-                except Exception as e_uc:
-                    print(f"[Selenium] UC 启动失败，回退到原生 Chrome: {e_uc}")
-            options = webdriver.ChromeOptions()
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
-            options.add_argument("--disable-gpu")
-            options.add_argument("--lang=en-US")
-            options.add_argument(f"--user-agent={ua}")
-            options.add_argument("--window-size=1280,800")
-            options.add_argument("--headless=new")
-            options.page_load_strategy = 'eager'
-            driver = webdriver.Chrome(options=options)
-            print("[Selenium] 已用稳定配置启动新的 Chrome 实例")
+            minimal_options = webdriver.ChromeOptions()
+            minimal_options.add_argument("--no-sandbox")
+            minimal_options.add_argument("--disable-dev-shm-usage")
+            minimal_options.page_load_strategy = 'eager'
+            driver = webdriver.Chrome(options=minimal_options)
+            print("[Selenium] 已用最小配置启动新的 Chrome 实例")
             return driver
         except Exception as e2:
-            print(f"[Selenium] 启动失败: {e2}")
+            print(f"[Selenium] 最小配置仍启动失败: {e2}")
             raise
 
     def find_article_for_tweet(driver, tweet_id: Optional[str]):
@@ -231,14 +206,6 @@ def main():
                             like = None
                     except Exception:
                         pass
-                    if like is None and article is not None:
-                        try:
-                            atxt = article.text or ""
-                            m = re.search(r"([0-9][0-9,\.]*\s*(?:K|M|B|万|亿)?)\D{0,20}(?:Likes?|喜欢|点赞)", atxt, flags=re.IGNORECASE|re.DOTALL)
-                            if m:
-                                like = parse_compact_number(m.group(1))
-                        except Exception:
-                            pass
                     try:
                         reply_el = scope.find_element(By.XPATH, ".//div[@aria-label and (contains(@aria-label,'回复') or contains(@aria-label,'Reply'))]")
                         rlabel = reply_el.get_attribute('aria-label') or ""
@@ -251,14 +218,6 @@ def main():
                             reply = None
                     except Exception:
                         pass
-                    if reply is None and article is not None:
-                        try:
-                            atxt = article.text or ""
-                            m = re.search(r"([0-9][0-9,\.]*\s*(?:K|M|B|万|亿)?)\D{0,20}(?:Replies?|回复|评论)", atxt, flags=re.IGNORECASE|re.DOTALL)
-                            if m:
-                                reply = parse_compact_number(m.group(1))
-                        except Exception:
-                            pass
                     try:
                         rt_el = scope.find_element(
                             By.XPATH,
@@ -274,14 +233,6 @@ def main():
                             retweet = None
                     except Exception:
                         pass
-                    if retweet is None and article is not None:
-                        try:
-                            atxt = article.text or ""
-                            m = re.search(r"([0-9][0-9,\.]*\s*(?:K|M|B|万|亿)?)\D{0,20}(?:Reposts?|Retweets?|转推|转发|转帖|转贴)", atxt, flags=re.IGNORECASE|re.DOTALL)
-                            if m:
-                                retweet = parse_compact_number(m.group(1))
-                        except Exception:
-                            pass
                     try:
                         views_el = scope.find_element(By.XPATH, ".//div[@aria-label and (contains(@aria-label,'次观看') or contains(@aria-label,'Views'))]")
                         vilabel = views_el.get_attribute('aria-label') or ""
